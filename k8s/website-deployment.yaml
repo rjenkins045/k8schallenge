@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website-deployment
+  labels:
+    app: ecommerce-website
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-website
+  template:
+    metadata:
+      labels:
+        app: ecommerce-website
+    spec:
+      containers:
+      - name: ecommerce-web
+        image: codered5150/ecom-web:v18
+        ports:
+        - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /health.php
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        env:
+        - name: FEATURE_DARK_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: feature-toggle-config   
+              key: FEATURE_DARK_MODE 
+        - name: SHOW_PROMO_BANNER
+          valueFrom:
+            configMapKeyRef:
+              name: feature-toggle-config   
+              key: SHOW_PROMO_BANNER   
+        - name: DB_HOST
+          value: "mysql-service"
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-user-creds
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-user-creds
+              key: password
+        - name: DB_NAME
+          value: "ecomdb"
+            

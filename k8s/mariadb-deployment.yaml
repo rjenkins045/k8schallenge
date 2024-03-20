@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecomdb
+  template:
+    metadata:
+      labels:
+        app: ecomdb
+    spec:
+      containers:
+      - name: ecomdb
+        image: mariadb:latest
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-root-password
+              key: password
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-user-creds
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-user-creds
+              key: password
+        volumeMounts:
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: init-script
+        configMap:
+          name: db-init-script
+          items:
+          - key: db-load-script.sql
+            path: db-load-script.sql
+      - name: mariadb-storage
+        persistentVolumeClaim:
+          claimName: mariadb-pvc
